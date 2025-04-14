@@ -1,6 +1,7 @@
 import torch as t
 import random as rng
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 def linear_function(a, b):
@@ -10,7 +11,8 @@ def linear_function(a, b):
 
 
 def deviated_points_uniform(f, X, percent_error):
-    Y = [f(x)*(1 + (percent_error/100) * rng.uniform(-1, 1)) for x in X]
+    deviation = (percent_error/100) * np.random.uniform(-1, 1, size=X.shape)
+    Y = np.vectorize(f)(X) * (1 + deviation)
     return Y
 
 
@@ -32,9 +34,24 @@ def fit_line(X, Y, iters=100, lr=0.01):
     return (a.detach().numpy(), b.detach().numpy())
 
 
-print(deviated_points_uniform(
-    linear_function(1, 0),
-    [1, 2, 3, 4, 5], 10))
-(a, b) = fit_line(np.array([1, 2, 3]), np.array([3, 5, 7]), 100, 0.01)
+def plot(X, Y, a, b):
+    plt.figure(figsize=(8, 5))
+    plt.scatter(X, Y, label='Data', color='red')
+    # plt.plot()
+    plt.plot(X, np.vectorize(linear_function(a, b))(X),
+             label='fit', color='blue')
+    plt.show()
+
+
+a = 1.5
+b = 3
+X = np.array(range(1, 14))
+Y = np.array(deviated_points_uniform(linear_function(a, b), X, 10))
+
+for a, b in zip(X, Y):
+    print(a, b, sep=" ", end="\n")
+
+(a, b) = fit_line(X, Y, 1000, 0.01)
 print(a)
 print(b)
+plot(X, Y, a, b)
