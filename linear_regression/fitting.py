@@ -15,12 +15,14 @@ def deviated_points_uniform(f, X, percent_error):
     return Y
 
 
-def fit_line(X, Y, iters=10000, lr=0.01):
-    b = t.tensor(Y[0], requires_grad=True)
-    slope = (Y[-1] - Y[0]) / (X[-1] - X[0])
+def fit_line(X, Y, iters=1000, lr=0.01):
+    y_scale_factor = np.max(abs(Y))
+    Y_scaled = Y / y_scale_factor
+    b = t.tensor(Y_scaled[0], requires_grad=True)
+    slope = (Y_scaled[-1] - Y_scaled[0]) / (X[-1] - X[0])
     a = t.tensor(slope, requires_grad=True)
-    Y_t = t.tensor(Y)
-    X_t = t.tensor(X)
+    Y_t = t.tensor(Y_scaled, dtype=t.float64)
+    X_t = t.tensor(X, dtype=t.float64)
     optimizer = t.optim.SGD([a, b], lr=lr)
 
     for i in range(iters):
@@ -31,7 +33,8 @@ def fit_line(X, Y, iters=10000, lr=0.01):
         loss.backward()
         optimizer.step()
 
-    return (a.detach().numpy(), b.detach().numpy())
+    return (a.detach().numpy() * y_scale_factor,
+            b.detach().numpy() * y_scale_factor)
 
 
 def plot(X, Y, a, b):
