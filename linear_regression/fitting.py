@@ -1,5 +1,4 @@
 import torch as t
-import random as rng
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -16,9 +15,10 @@ def deviated_points_uniform(f, X, percent_error):
     return Y
 
 
-def fit_line(X, Y, iters=100, lr=0.01):
-    a = t.tensor(0.0, requires_grad=True)
-    b = t.tensor(0.0, requires_grad=True)
+def fit_line(X, Y, iters=10000, lr=0.01):
+    b = t.tensor(Y[0], requires_grad=True)
+    slope = (Y[-1] - Y[0]) / (X[-1] - X[0])
+    a = t.tensor(slope, requires_grad=True)
     Y_t = t.tensor(Y)
     X_t = t.tensor(X)
     optimizer = t.optim.SGD([a, b], lr=lr)
@@ -37,15 +37,15 @@ def fit_line(X, Y, iters=100, lr=0.01):
 def plot(X, Y, a, b):
     plt.figure(figsize=(8, 5))
     plt.scatter(X, Y, label='Data', color='red')
-    # plt.plot()
     plt.plot(X, np.vectorize(linear_function(a, b))(X),
-             label='fit', color='blue')
+             label='Line fit', color='blue')
+    plt.legend()
     plt.show()
 
 
 a = 1.5
 b = 3
-X = np.array(range(1, 14))
+X = np.array(range(1, 15))
 Y = np.array(deviated_points_uniform(linear_function(a, b), X, 10))
 
 for a, b in zip(X, Y):
