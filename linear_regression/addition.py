@@ -1,12 +1,11 @@
 import torch
 from torch import nn
 
+import time
 import random
 
-# device = torch.accelerator.current_accelerator(
-# ).type if torch.accelerator.is_available() else "cpu"
-
-# print(f"Using {device} device")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f"Using {device} device")
 
 
 class AdderNetwork(nn.Module):
@@ -64,24 +63,28 @@ def get_expected_output(data):
     return [get_ans(bits) for bits in data]
 
 
-model = AdderNetwork()
+model = AdderNetwork().to(device)
 
 loss = nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
 
-iters = 20000
+start_time = time.time()
+iters = 5000
 for i in range(iters):
     model.train()
-    inputs = gen_data(128)
-    outputs = model(torch.tensor(inputs, dtype=torch.float32))
+    inputs = gen_data(512)
+    outputs = model(torch.tensor(inputs, dtype=torch.float32).to(device))
     optimizer.zero_grad()
     loss_val = loss(outputs, torch.tensor(
-        get_expected_output(inputs), dtype=torch.float32))
+        get_expected_output(inputs), dtype=torch.float32).to(device))
     loss_val.backward()
     optimizer.step()
 
-    if (i + 1) % 10 == 0:
+    if (i + 1) % 100 == 0:
         print(f"{i+1}th done")
+
+end_time = time.time()
+print(f"Training completed in {(end_time - start_time):.2f} seconds")
 
 ans = input("Do you want to run the accuracy test? [y/n]\n")
 if ans == "y":
@@ -92,8 +95,8 @@ if ans == "y":
     for i in range(128):
         for j in range(128):
             input_val = torch.tensor(
-                [decompose_number(i) + decompose_number(j)])
-            output = model(input_val).detach().numpy()[0]
+                [decompose_number(i) + decompose_number(j)]).to(device)
+            output = model(input_val).detach().cpu().numpy()[0]
             if bits_to_number(output) == i + j:
                 ans += 1
             else:
@@ -109,15 +112,17 @@ if ans == "y":
     for (a, b, c) in mistakes:
         print(f"{a} + {b} =/= {c}")
 
-while True:
-    try:
-        a = int(input("Enter first number: "))
-        b = int(input("Enter second number: "))
-    except ValueError:
-        print("Invalid input\n")
-        continue
-    if a == -1 or b == -1:
-        break
-    input_vals = torch.tensor([decompose_number(a) + decompose_number(b)])
-    output = model(input_vals).detach().numpy()[0]
-    print(bits_to_number(output))
+ans = input("Do you want to enter interactive mode? [y/n]\n")
+if ans == "y":
+    while True:
+        try:
+            a = int(input("Enter first number: "))
+            b = int(input("Enter second number: "))
+        except ValueError:
+            print("Invalid input\n")
+            continue
+        if a == -1 or b == -1:
+            break
+        input_vals = torch.tensor([decompose_number(a) + decompose_number(b)])
+        output = model(input_vals).detach().numpy()[0]
+        print(bits_to_number(output))
