@@ -67,9 +67,9 @@ def get_expected_output(data):
 model = AdderNetwork()
 
 loss = nn.MSELoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
 
-iters = 10000
+iters = 20000
 for i in range(iters):
     model.train()
     inputs = gen_data(128)
@@ -82,6 +82,24 @@ for i in range(iters):
 
     if (i + 1) % 10 == 0:
         print(f"{i+1}th done")
+
+ans = input("Do you want to run the accuracy test?")
+if ans == "y":
+    total = 128 * 128
+    iters = 0
+    ans = 0
+    for i in range(128):
+        for j in range(128):
+            input_val = torch.tensor(
+                [decompose_number(i) + decompose_number(j)])
+            output = model(input_val).detach().numpy()[0]
+            if bits_to_number(output) == i + j:
+                ans += 1
+            iters += 1
+            if (iters + 1) % 100 == 0:
+                print(f"{iters+1}/{total} done")
+    percentage = 100 * (ans / total)
+    print(f"Accuracy test finished: {percentage:0.2f}")
 
 while True:
     try:
