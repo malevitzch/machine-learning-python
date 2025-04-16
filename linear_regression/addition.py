@@ -50,4 +50,21 @@ def get_ans(bits):
     return decompose_number(num_1 + num_2)
 
 
-print(get_ans(decompose_number(7) + decompose_number(8)))
+def gen_case():
+    num_1 = random.randint(0, (1 << 31) - 1)
+    num_2 = random.randint(0, (1 << 31) - 1)
+    return decompose_number(num_1) + decompose_number(num_2)
+
+
+def gen_data(n):
+    return [gen_case() for i in range(n)]
+
+
+def get_expected_output(data):
+    [get_ans(bits) for bits in data]
+
+
+model = AdderNetwork().to(device)
+data = torch.tensor(gen_data(3), dtype=torch.float64)
+results = model(data)
+print(results)
