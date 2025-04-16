@@ -29,7 +29,7 @@ class AdderNetwork(nn.Module):
 
 def decompose_number(n):
     ans = [0.0 for i in range(8)]
-    for i in range(7):
+    for i in range(8):
         ans[i] = float(n & 1)
         n //= 2
     return ans
@@ -37,7 +37,7 @@ def decompose_number(n):
 
 def bits_to_number(bits):
     num = 0
-    for i in reversed(range(8)):
+    for i in reversed(range(len(bits))):
         num *= 2
         if bits[i] > 0.5:
             num += 1
@@ -83,11 +83,12 @@ for i in range(iters):
     if (i + 1) % 10 == 0:
         print(f"{i+1}th done")
 
-ans = input("Do you want to run the accuracy test?")
+ans = input("Do you want to run the accuracy test? [y/n]\n")
 if ans == "y":
     total = 128 * 128
     iters = 0
     ans = 0
+    mistakes = []
     for i in range(128):
         for j in range(128):
             input_val = torch.tensor(
@@ -95,11 +96,18 @@ if ans == "y":
             output = model(input_val).detach().numpy()[0]
             if bits_to_number(output) == i + j:
                 ans += 1
+            else:
+                mistakes.append((i, j, bits_to_number(output)))
             iters += 1
             if (iters + 1) % 100 == 0:
                 print(f"{iters+1}/{total} done")
     percentage = 100 * (ans / total)
     print(f"Accuracy test finished: {percentage:0.2f}")
+
+ans = input("Do you want to see where the model made mistakes? [y/n]\n")
+if ans == "y":
+    for (a, b, c) in mistakes:
+        print(f"{a} + {b} =/= {c}")
 
 while True:
     try:
