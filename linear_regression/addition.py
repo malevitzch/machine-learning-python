@@ -14,11 +14,11 @@ class AdderNetwork(nn.Module):
         super().__init__()
         self.flatten = nn.Flatten()
         self.linear_relu_stack = nn.Sequential(
-            nn.Linear(16, 64),
+            nn.Linear(16, 32),
             nn.ReLU(),
-            nn.Linear(64, 64),
+            nn.Linear(32, 32),
             nn.ReLU(),
-            nn.Linear(64, 8),
+            nn.Linear(32, 8),
         )
 
     def forward(self, x):
@@ -37,7 +37,7 @@ def decompose_number(n):
 
 def bits_to_number(bits):
     num = 0
-    for i in reversed(range(7)):
+    for i in reversed(range(8)):
         num *= 2
         if bits[i] > 0.5:
             num += 1
