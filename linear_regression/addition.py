@@ -63,28 +63,30 @@ def get_expected_output(data):
     return [get_ans(bits) for bits in data]
 
 
+def train(model):
+    loss = nn.MSELoss()
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
+
+    start_time = time.time()
+    iters = 5000
+    for i in range(iters):
+        model.train()
+        inputs = gen_data(512)
+        outputs = model(torch.tensor(inputs, dtype=torch.float32).to(device))
+        optimizer.zero_grad()
+        loss_val = loss(outputs, torch.tensor(
+            get_expected_output(inputs), dtype=torch.float32).to(device))
+        loss_val.backward()
+        optimizer.step()
+
+        if (i + 1) % 100 == 0:
+            print(f"{i+1}th done")
+    end_time = time.time()
+    print(f"Training completed in {(end_time - start_time):.2f} seconds")
+
+
 model = AdderNetwork().to(device)
-
-loss = nn.MSELoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
-
-start_time = time.time()
-iters = 5000
-for i in range(iters):
-    model.train()
-    inputs = gen_data(512)
-    outputs = model(torch.tensor(inputs, dtype=torch.float32).to(device))
-    optimizer.zero_grad()
-    loss_val = loss(outputs, torch.tensor(
-        get_expected_output(inputs), dtype=torch.float32).to(device))
-    loss_val.backward()
-    optimizer.step()
-
-    if (i + 1) % 100 == 0:
-        print(f"{i+1}th done")
-
-end_time = time.time()
-print(f"Training completed in {(end_time - start_time):.2f} seconds")
+train(model)
 
 ans = input("Do you want to run the accuracy test? [y/n]\n")
 if ans == "y":
@@ -126,3 +128,9 @@ if ans == "y":
         input_vals = torch.tensor([decompose_number(a) + decompose_number(b)])
         output = model(input_vals).detach().numpy()[0]
         print(bits_to_number(output))
+
+ans = input("Do you want to save the model? [y/n]\n")
+if ans == "y":
+    path = input(
+        "Please input the name of the file: ")
+    torch.save(model.state_dict(), path)
