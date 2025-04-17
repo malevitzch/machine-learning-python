@@ -85,8 +85,15 @@ def train(model):
     print(f"Training completed in {(end_time - start_time):.2f} seconds")
 
 
-model = AdderNetwork().to(device)
-train(model)
+model = AdderNetwork()
+ans = input("Do you want to load the weights from a file? [y/n]\n")
+if ans == "y":
+    filename = input("Enter file name: ")
+    model.load_state_dict(torch.load(filename, weights_only=True))
+    model.to(device)
+else:
+    model.to(device)
+    train(model)
 
 ans = input("Do you want to run the accuracy test? [y/n]\n")
 if ans == "y":
@@ -132,5 +139,5 @@ if ans == "y":
 ans = input("Do you want to save the model? [y/n]\n")
 if ans == "y":
     path = input(
-        "Please input the name of the file: ")
+        "Enter file name: ")
     torch.save(model.state_dict(), path)
