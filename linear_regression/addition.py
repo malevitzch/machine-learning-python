@@ -63,15 +63,15 @@ def get_expected_output(data):
     return [get_ans(bits) for bits in data]
 
 
-def train(model):
+def train(model, iters, batch_size):
     loss = nn.MSELoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
 
     start_time = time.time()
-    iters = 5000
+
     for i in range(iters):
         model.train()
-        inputs = gen_data(512)
+        inputs = gen_data(batch_size)
         outputs = model(torch.tensor(inputs, dtype=torch.float32).to(device))
         optimizer.zero_grad()
         loss_val = loss(outputs, torch.tensor(
@@ -93,7 +93,7 @@ if ans == "y":
     model.to(device)
 else:
     model.to(device)
-    train(model)
+    train(model, 5000, 512)
 
 ans = input("Do you want to run the accuracy test? [y/n]\n")
 if ans == "y":
@@ -115,11 +115,10 @@ if ans == "y":
                 print(f"{iters+1}/{total} done")
     percentage = 100 * (ans / total)
     print(f"Accuracy test finished: {percentage:0.2f}")
-
-ans = input("Do you want to see where the model made mistakes? [y/n]\n")
-if ans == "y":
-    for (a, b, c) in mistakes:
-        print(f"{a} + {b} =/= {c}")
+    ans = input("Do you want to see where the model made mistakes? [y/n]\n")
+    if ans == "y":
+        for (a, b, c) in mistakes:
+            print(f"{a} + {b} =/= {c}")
 
 ans = input("Do you want to enter interactive mode? [y/n]\n")
 if ans == "y":
@@ -132,8 +131,9 @@ if ans == "y":
             continue
         if a == -1 or b == -1:
             break
-        input_vals = torch.tensor([decompose_number(a) + decompose_number(b)])
-        output = model(input_vals).detach().numpy()[0]
+        input_vals = torch.tensor(
+            [decompose_number(a) + decompose_number(b)]).to(device)
+        output = model(input_vals).detach().cpu().numpy()[0]
         print(bits_to_number(output))
 
 ans = input("Do you want to save the model? [y/n]\n")
