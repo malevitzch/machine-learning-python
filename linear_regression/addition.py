@@ -115,7 +115,7 @@ if ans == "y":
         except ValueError:
             print("Invalid input\n")
             continue
-        if a == -1 or b == -1:
+        if a < 0 or b < 0:
             break
         input_vals = torch.tensor(
             [decompose_number(a) + decompose_number(b)]).to(device)
