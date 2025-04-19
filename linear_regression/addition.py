@@ -3,27 +3,11 @@ from torch import nn
 
 import time
 import random
+from networks import AdderNetwork
+
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using {device} device")
-
-
-class AdderNetwork(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.flatten = nn.Flatten()
-        self.linear_relu_stack = nn.Sequential(
-            nn.Linear(16, 32),
-            nn.ReLU(),
-            nn.Linear(32, 32),
-            nn.ReLU(),
-            nn.Linear(32, 8),
-        )
-
-    def forward(self, x):
-        x = self.flatten(x)
-        logits = self.linear_relu_stack(x)
-        return logits
 
 
 def decompose_number(n):
@@ -97,6 +81,7 @@ else:
 
 ans = input("Do you want to run the accuracy test? [y/n]\n")
 if ans == "y":
+    model.to('cpu')
     total = 128 * 128
     iters = 0
     ans = 0
@@ -104,14 +89,14 @@ if ans == "y":
     for i in range(128):
         for j in range(128):
             input_val = torch.tensor(
-                [decompose_number(i) + decompose_number(j)]).to(device)
-            output = model(input_val).detach().cpu().numpy()[0]
+                [decompose_number(i) + decompose_number(j)])
+            output = model(input_val).detach().numpy()[0]
             if bits_to_number(output) == i + j:
                 ans += 1
             else:
                 mistakes.append((i, j, bits_to_number(output)))
             iters += 1
-            if (iters + 1) % 100 == 0:
+            if (iters + 1) % 128 == 0:
                 print(f"{iters+1}/{total} done")
     percentage = 100 * (ans / total)
     print(f"Accuracy test finished: {percentage:0.2f}")
@@ -119,6 +104,7 @@ if ans == "y":
     if ans == "y":
         for (a, b, c) in mistakes:
             print(f"{a} + {b} =/= {c}")
+    model.to(device)
 
 ans = input("Do you want to enter interactive mode? [y/n]\n")
 if ans == "y":
