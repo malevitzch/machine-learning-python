@@ -3,6 +3,14 @@
 from enum import Enum
 import pygame
 import time
+import os
+
+# this is a personal workaround so that
+# the window does not appear between two screens
+screen_width, screen_height = 1920, 1080
+pos_x = screen_width + (screen_width - 7 * 64) // 2
+pos_y = (screen_height - 7 * 64) // 2
+os.environ['SDL_VIDEO_WINDOW_POS'] = f"{pos_x},{pos_y}"
 
 
 class Tile(Enum):
