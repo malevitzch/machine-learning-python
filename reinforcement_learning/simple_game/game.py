@@ -78,10 +78,20 @@ class Game:
                 if key == pygame.K_d:
                     nx += 1
                 if nx in range(7) and ny in range(7):
-                    self.grid[self.px][self.py] = Tile.NOTHING
-                    self.grid[nx][ny] = Tile.PLAYER
-                    self.px = nx
-                    self.py = ny
+                    if self.grid[nx][ny] == Tile.NOTHING:
+                        self.grid[self.px][self.py] = Tile.NOTHING
+                        self.grid[nx][ny] = Tile.PLAYER
+                        self.px = nx
+                        self.py = ny
+                    if self.grid[nx][ny] == Tile.ENEMY:
+                        dx = nx - self.px
+                        dy = ny - self.py
+                        nex = nx + dx
+                        ney = ny + dy
+                        if nex in range(7) and ney in range(7):
+                            if self.grid[nex][ney] == Tile.NOTHING:
+                                self.grid[nx][ny] = Tile.NOTHING
+                                self.grid[nex][ney] = Tile.ENEMY
                     self.playercd = 4
                 else:
                     self.playercd = 1
