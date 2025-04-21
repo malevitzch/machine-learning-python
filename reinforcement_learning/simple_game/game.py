@@ -39,21 +39,26 @@ class Game:
         self.grid[6][0] = Tile.ENEMY
         self.grid[6][6] = Tile.ENEMY
 
+    def damage_player(self, damage):
+        self.player_health = max(0, self.player_health - damage)
+
     def enemy_move(self, x, y):
         tx = x
         ty = y
-        if x < self.px:
+        if x < self.px and self.grid[x+1][y] in (Tile.PLAYER, Tile.NOTHING):
             tx += 1
-        elif x > self.px:
+        elif x > self.px and self.grid[x-1][y] in (Tile.PLAYER, Tile.NOTHING):
             tx -= 1
-        elif y < self.py:
+        elif y < self.py and self.grid[x][y+1] in (Tile.PLAYER, Tile.NOTHING):
             ty += 1
-        else:
+        elif y > self.py and self.grid[x][y-1] in (Tile.PLAYER, Tile.NOTHING):
             ty -= 1
         target = self.grid[tx][ty]
         if target == Tile.NOTHING:
             self.grid[tx][ty] = Tile.ENEMY
             self.grid[x][y] = Tile.NOTHING
+        elif target == Tile.PLAYER:
+            self.damage_player(1)
 
     def step(self):
         if self.moment != 0:
@@ -94,4 +99,6 @@ while running:
     pygame.display.flip()
     time.sleep(0.3)
     game.step()
+    if game.player_health == 0:
+        running = False
 pygame.quit()
