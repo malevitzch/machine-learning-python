@@ -30,6 +30,7 @@ class Game:
         self.px = 3
         self.py = 3
         self.moment = 0
+        self.playercd = 1
         self.player_health = 10
         self.player = player
         self.grid = [[Tile.NOTHING for _ in range(7)] for _ in range(7)]
@@ -61,6 +62,31 @@ class Game:
             self.damage_player(1)
 
     def step(self):
+        self.playercd -= 1
+        if self.playercd == 0:
+            key = wait_for_key()
+            if key in (pygame.K_w, pygame.K_a, pygame.K_s, pygame.K_d):
+                nx = self.px
+                ny = self.py
+
+                if key == pygame.K_w:
+                    ny -= 1
+                if key == pygame.K_s:
+                    ny += 1
+                if key == pygame.K_a:
+                    nx -= 1
+                if key == pygame.K_d:
+                    nx += 1
+                if nx in range(7) and ny in range(7):
+                    self.grid[self.px][self.py] = Tile.NOTHING
+                    self.grid[nx][ny] = Tile.PLAYER
+                    self.px = nx
+                    self.py = ny
+                    self.playercd = 4
+                else:
+                    self.playercd = 1
+            else:
+                self.playercd = 1
         if self.moment != 0:
             return
         coords = []
@@ -70,6 +96,17 @@ class Game:
                     coords.append((i, j))
         for x, y in coords:
             self.enemy_move(x, y)
+
+
+def wait_for_key():
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+
+            if event.type == pygame.KEYDOWN:
+                return event.key
 
 
 player = 0
@@ -97,8 +134,9 @@ while running:
                              (i * width, j * height,
                                  (i + 1) * width, (j + 1) * height))
     pygame.display.flip()
-    time.sleep(0.3)
+    # time.sleep(0.3)
     game.step()
+    game.moment = (game.moment + 1) % 8
     if game.player_health == 0:
         running = False
 pygame.quit()
