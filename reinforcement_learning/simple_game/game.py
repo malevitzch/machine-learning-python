@@ -2,6 +2,7 @@
 
 from enum import Enum
 import pygame
+import time
 
 
 class Tile(Enum):
@@ -18,6 +19,10 @@ class Player:
 
 class Game:
     def __init__(self, player):
+        self.px = 3
+        self.py = 3
+        self.moment = 0
+        self.player_health = 10
         self.player = player
         self.grid = [[Tile.NOTHING for _ in range(7)] for _ in range(7)]
         self.grid[3][3] = Tile.PLAYER
@@ -25,6 +30,33 @@ class Game:
         self.grid[0][6] = Tile.ENEMY
         self.grid[6][0] = Tile.ENEMY
         self.grid[6][6] = Tile.ENEMY
+
+    def enemy_move(self, x, y):
+        tx = x
+        ty = y
+        if x < self.px:
+            tx += 1
+        elif x > self.px:
+            tx -= 1
+        elif y < self.py:
+            ty += 1
+        else:
+            ty -= 1
+        target = self.grid[tx][ty]
+        if target == Tile.NOTHING:
+            self.grid[tx][ty] = Tile.ENEMY
+            self.grid[x][y] = Tile.NOTHING
+
+    def step(self):
+        if self.moment != 0:
+            return
+        coords = []
+        for i in range(7):
+            for j in range(7):
+                if self.grid[i][j] == Tile.ENEMY:
+                    coords.append((i, j))
+        for x, y in coords:
+            self.enemy_move(x, y)
 
 
 player = 0
@@ -52,4 +84,6 @@ while running:
                              (i * width, j * height,
                                  (i + 1) * width, (j + 1) * height))
     pygame.display.flip()
+    time.sleep(0.3)
+    game.step()
 pygame.quit()
