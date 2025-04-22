@@ -21,6 +21,11 @@ class Tile(Enum):
 class Player:
     # moment is from 0 to 7
     def make_move(self, game):
+        pass
+
+
+class ManualPlayer(Player):
+    def make_move(self, game):
         key = wait_for_key()
         if key in (pygame.K_w, pygame.K_a, pygame.K_s, pygame.K_d):
             nx = game.px
@@ -118,7 +123,7 @@ def wait_for_key():
                 return event.key
 
 
-player = Player()
+player = ManualPlayer()
 game = Game(player)
 
 screen = pygame.display.set_mode((7 * 64, 7 * 64))
