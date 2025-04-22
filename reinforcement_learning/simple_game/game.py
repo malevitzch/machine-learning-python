@@ -2,7 +2,6 @@
 
 from enum import Enum
 import pygame
-import time
 import os
 
 # this is a personal workaround so that
@@ -21,8 +20,40 @@ class Tile(Enum):
 
 class Player:
     # moment is from 0 to 7
-    def makeMove(board, x, y, moment):
-        return
+    def make_move(self, game):
+        key = wait_for_key()
+        if key in (pygame.K_w, pygame.K_a, pygame.K_s, pygame.K_d):
+            nx = game.px
+            ny = game.py
+
+            if key == pygame.K_w:
+                ny -= 1
+            if key == pygame.K_s:
+                ny += 1
+            if key == pygame.K_a:
+                nx -= 1
+            if key == pygame.K_d:
+                nx += 1
+            if nx in range(7) and ny in range(7):
+                if game.grid[nx][ny] == Tile.NOTHING:
+                    game.grid[game.px][game.py] = Tile.NOTHING
+                    game.grid[nx][ny] = Tile.PLAYER
+                    game.px = nx
+                    game.py = ny
+                if game.grid[nx][ny] == Tile.ENEMY:
+                    dx = nx - game.px
+                    dy = ny - game.py
+                    nex = nx + dx
+                    ney = ny + dy
+                    if nex in range(7) and ney in range(7):
+                        if game.grid[nex][ney] == Tile.NOTHING:
+                            game.grid[nx][ny] = Tile.NOTHING
+                            game.grid[nex][ney] = Tile.ENEMY
+                game.playercd = 4
+            else:
+                game.playercd = 1
+        else:
+            game.playercd = 1
 
 
 class Game:
@@ -64,39 +95,7 @@ class Game:
     def step(self):
         self.playercd -= 1
         if self.playercd == 0:
-            key = wait_for_key()
-            if key in (pygame.K_w, pygame.K_a, pygame.K_s, pygame.K_d):
-                nx = self.px
-                ny = self.py
-
-                if key == pygame.K_w:
-                    ny -= 1
-                if key == pygame.K_s:
-                    ny += 1
-                if key == pygame.K_a:
-                    nx -= 1
-                if key == pygame.K_d:
-                    nx += 1
-                if nx in range(7) and ny in range(7):
-                    if self.grid[nx][ny] == Tile.NOTHING:
-                        self.grid[self.px][self.py] = Tile.NOTHING
-                        self.grid[nx][ny] = Tile.PLAYER
-                        self.px = nx
-                        self.py = ny
-                    if self.grid[nx][ny] == Tile.ENEMY:
-                        dx = nx - self.px
-                        dy = ny - self.py
-                        nex = nx + dx
-                        ney = ny + dy
-                        if nex in range(7) and ney in range(7):
-                            if self.grid[nex][ney] == Tile.NOTHING:
-                                self.grid[nx][ny] = Tile.NOTHING
-                                self.grid[nex][ney] = Tile.ENEMY
-                    self.playercd = 4
-                else:
-                    self.playercd = 1
-            else:
-                self.playercd = 1
+            player.make_move(self)
         if self.moment != 0:
             return
         coords = []
@@ -119,7 +118,7 @@ def wait_for_key():
                 return event.key
 
 
-player = 0
+player = Player()
 game = Game(player)
 
 screen = pygame.display.set_mode((7 * 64, 7 * 64))
