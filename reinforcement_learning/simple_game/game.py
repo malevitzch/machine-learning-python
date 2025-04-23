@@ -40,20 +40,13 @@ class ManualPlayer(Player):
             if key == pygame.K_d:
                 nx += 1
             if nx in range(7) and ny in range(7):
-                if game.grid[nx][ny] == Tile.NOTHING:
+                if game.grid[nx][ny] in (Tile.ENEMY, Tile.NOTHING):
+                    if game.grid[nx][ny] == Tile.ENEMY:
+                        game.enemy_count -= 1
                     game.grid[game.px][game.py] = Tile.NOTHING
                     game.grid[nx][ny] = Tile.PLAYER
                     game.px = nx
                     game.py = ny
-                if game.grid[nx][ny] == Tile.ENEMY:
-                    dx = nx - game.px
-                    dy = ny - game.py
-                    nex = nx + dx
-                    ney = ny + dy
-                    if nex in range(7) and ney in range(7):
-                        if game.grid[nex][ney] == Tile.NOTHING:
-                            game.grid[nx][ny] = Tile.NOTHING
-                            game.grid[nex][ney] = Tile.ENEMY
                 game.playercd = 4
             else:
                 game.playercd = 1
@@ -65,9 +58,12 @@ class Game:
     def __init__(self, player):
         self.px = 3
         self.py = 3
+        self.enemy_count = 4
+        self.turn = 0
+        self.score = 0
         self.moment = 0
         self.playercd = 1
-        self.player_health = 10
+        self.player_health = 8
         self.player = player
         self.grid = [[Tile.NOTHING for _ in range(7)] for _ in range(7)]
         self.grid[3][3] = Tile.PLAYER
@@ -98,8 +94,11 @@ class Game:
             self.damage_player(1)
 
     def step(self):
+        if self.enemy_count == 0:
+            self.score = 128 - self.turn
         self.playercd -= 1
         if self.playercd == 0:
+            self.turn += 1
             player.make_move(self)
         if self.moment != 0:
             return
@@ -151,6 +150,7 @@ while running:
     # time.sleep(0.3)
     game.step()
     game.moment = (game.moment + 1) % 8
-    if game.player_health == 0:
+    if game.player_health == 0 or game.score != 0:
+        print(f"The score is {game.score}")
         running = False
 pygame.quit()
