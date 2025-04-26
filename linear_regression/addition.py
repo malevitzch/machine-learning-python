@@ -69,18 +69,7 @@ def train(model, iters, batch_size):
     print(f"Training completed in {(end_time - start_time):.2f} seconds")
 
 
-model = AdderNetwork()
-ans = input("Do you want to load the weights from a file? [y/n]\n")
-if ans == "y":
-    filename = input("Enter file name: ")
-    model.load_state_dict(torch.load(filename, weights_only=True))
-    model.to(device)
-else:
-    model.to(device)
-    train(model, 5000, 512)
-
-ans = input("Do you want to run the accuracy test? [y/n]\n")
-if ans == "y":
+def run_accuracy_test(model):
     model.to('cpu')
     total = 128 * 128
     iters = 0
@@ -105,6 +94,21 @@ if ans == "y":
         for (a, b, c) in mistakes:
             print(f"{a} + {b} =/= {c}")
     model.to(device)
+
+
+model = AdderNetwork()
+ans = input("Do you want to load the weights from a file? [y/n]\n")
+if ans == "y":
+    filename = input("Enter file name: ")
+    model.load_state_dict(torch.load(filename, weights_only=True))
+    model.to(device)
+else:
+    model.to(device)
+    train(model, 5000, 512)
+
+ans = input("Do you want to run the accuracy test? [y/n]\n")
+if ans == "y":
+    run_accuracy_test(model)
 
 ans = input("Do you want to enter interactive mode? [y/n]\n")
 if ans == "y":
