@@ -96,6 +96,22 @@ def run_accuracy_test(model):
     model.to(device)
 
 
+def interactive_mode(model):
+    while True:
+        try:
+            a = int(input("Enter first number: "))
+            b = int(input("Enter second number: "))
+        except ValueError:
+            print("Invalid input\n")
+            continue
+        if a < 0 or b < 0:
+            break
+        input_vals = torch.tensor(
+            [decompose_number(a) + decompose_number(b)]).to(device)
+        output = model(input_vals).detach().cpu().numpy()[0]
+        print(bits_to_number(output))
+
+
 model = AdderNetwork()
 ans = input("Do you want to load the weights from a file? [y/n]\n")
 if ans == "y":
@@ -112,19 +128,7 @@ if ans == "y":
 
 ans = input("Do you want to enter interactive mode? [y/n]\n")
 if ans == "y":
-    while True:
-        try:
-            a = int(input("Enter first number: "))
-            b = int(input("Enter second number: "))
-        except ValueError:
-            print("Invalid input\n")
-            continue
-        if a < 0 or b < 0:
-            break
-        input_vals = torch.tensor(
-            [decompose_number(a) + decompose_number(b)]).to(device)
-        output = model(input_vals).detach().cpu().numpy()[0]
-        print(bits_to_number(output))
+    interactive_mode(model)
 
 ans = input("Do you want to save the model? [y/n]\n")
 if ans == "y":
