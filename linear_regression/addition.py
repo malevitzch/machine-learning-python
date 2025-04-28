@@ -4,7 +4,6 @@ from torch import nn
 import time
 import random
 from networks import AdderNetwork
-from networks import TransformerAdderNetwork
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using {device} device")
@@ -66,7 +65,14 @@ def train(model, iters, batch_size):
         if (i + 1) % 100 == 0:
             print(f"{i+1}/{iters} done")
     end_time = time.time()
-    print(f"Training completed in {(end_time - start_time):.2f} seconds")
+    seconds = end_time - start_time
+    minutes = seconds // 60
+    if minutes == 0:
+        print(f"Training completed in {(end_time - start_time):.2f} seconds")
+    else:
+        seconds = seconds % 60
+        print(
+            f"Training completed in {int(minutes)}m {seconds:.2f}s")
 
 
 def run_accuracy_test(model):
