@@ -118,13 +118,27 @@ if ans == "y":
     filename = input("Enter file name: ")
     model.load_state_dict(torch.load(filename, weights_only=True))
     model.to(device)
-else:
-    model.to(device)
-    train(model, 5000, 512)
 
-ans = input("Do you want to run the accuracy test? [y/n]\n")
+ans = input("Do you want to train the model? [y/n]\n")
 if ans == "y":
-    run_accuracy_test(model)
+    model.to(device)
+    while True:
+        try:
+            iters = int(input("Enter the number of iterations: "))
+            if iters <= 0:
+                break
+            train(model, iters, 512)
+            ans = input("Do you want to run the accuracy test? [y/n]\n")
+            if ans == "y":
+                run_accuracy_test(model)
+
+        except ValueError:
+            print("Invalid input\n")
+else:
+    ans = input("Do you want to run the accuracy test? [y/n]\n")
+    if ans == "y":
+        run_accuracy_test(model)
+
 
 ans = input("Do you want to enter interactive mode? [y/n]\n")
 if ans == "y":
