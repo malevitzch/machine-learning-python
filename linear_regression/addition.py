@@ -130,7 +130,8 @@ if ans == "y":
     model.to(device)
     while True:
         try:
-            iters = int(input("Enter the number of iterations: "))
+            iters = int(
+                input("Enter the number of iterations (or 0 to stop): "))
             if iters <= 0:
                 break
             train(model, iters, 512)
