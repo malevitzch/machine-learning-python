@@ -10,7 +10,9 @@ def cluster_test(df):
     kmeans.fit(df.iloc[:, :-1])
 
     df['cluster'] = kmeans.labels_
-
+    safe_cluster = df['cluster'].mode()[0]
+    if safe_cluster != 0:
+        df['cluster'] = df['cluster'].map({0: 1, 1: 0})
     correct = (df['label'] == df['cluster']).sum()
     all = len(df)
 
@@ -32,6 +34,5 @@ print(training_df.shape)
 print(verification_df.shape)
 
 # This method has 98% accuracy and does not require precise labeling of data
-# If we were to be more clever and guess which label is which based on how much
-# it appears, then we could do it without cheating
-cluster_test(df)
+# Rather it requires a vague idea of what the clusters represent
+cluster_test(training_df)
