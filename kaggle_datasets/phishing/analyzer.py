@@ -4,17 +4,21 @@ import sys
 from sklearn.cluster import KMeans
 from sklearn.ensemble import IsolationForest
 
+
+def split_df(df, percentage, random_state=42):
+    training_df = df.sample(
+        frac=0.8, random_state=42).reset_index(drop=True)
+    verification_df = df.drop(training_df.index).reset_index(drop=True)
+    return training_df, verification_df
+
+
 # This is very bad for the problem since the clusters are not split well
 # very bad idea in general, classifies everything as nonphishing
-
-
 def cluster_test(df):
     print("Running the KMeans cluster test")
     kmeans = KMeans(n_clusters=2, random_state=42, init='k-means++')
 
-    training_df = df.sample(
-        frac=0.8, random_state=42).reset_index(drop=True)
-    verification_df = df.drop(training_df.index).reset_index(drop=True)
+    training_df, verification_df = split_df(df, 0.8)
 
     kmeans.fit(training_df.iloc[:, :-1])
 
@@ -59,16 +63,14 @@ def cluster_test(df):
 
 
 # This model is very bad at identifying phishing emails,
-# 8% chance for good answer on phishing
-# 92% chance for good answer on regular
+# around 8% chance for good answer on phishing
+# around 92% chance for good answer on regular emails
 def isolation_forest_test(df):
 
     print("Running the isolation forest test")
     model = IsolationForest(contamination=0.08, random_state=42)
 
-    training_df = df.sample(
-        frac=0.5, random_state=42).reset_index(drop=True)
-    verification_df = df.drop(training_df.index).reset_index(drop=True)
+    training_df, verification_df = split_df(df, 0.8)
 
     model.fit(training_df.iloc[:, :-1])
     verification_df['anomaly'] = model.predict(verification_df.iloc[:, :-1])
@@ -101,6 +103,10 @@ def isolation_forest_test(df):
 
     print(f"Positive assessment: {positive_accuracy}%\n"
           f"negative assessment: {negative_accuracy}%")
+
+
+def SGD_classifier_test(df):
+    training_df, verification_df = split_df(df, 0.8)
 
 
 try:
