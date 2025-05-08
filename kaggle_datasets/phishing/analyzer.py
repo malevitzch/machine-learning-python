@@ -4,7 +4,7 @@ import sys
 import seaborn as sns
 
 from sklearn.cluster import KMeans
-from sklearn.ensemble import IsolationForest
+from sklearn.ensemble import IsolationForest, RandomForestClassifier
 from sklearn.linear_model import SGDClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import make_pipeline
@@ -129,16 +129,37 @@ def kernel_approx_test(df):
     run_assessment(verification_df)
 
 
+# Random forest is actually really good at detecting
+# phishing emails (with 99% accuracy)
+# It does have only 76% chance of correct answer on non-malicious emails
+# but it's not a bad tradeoff for 99% accuracy on phishing emails
+
+
+def random_forest_test(df):
+    training_df, verification_df = split_df(df, 0.8)
+    model = RandomForestClassifier(n_estimators=100, random_state=42)
+    model.fit(training_df.iloc[:, :-1], training_df['label'])
+    verification_df['predict'] = model.predict(verification_df.iloc[:, :-1])
+
+    run_assessment(verification_df)
+    # There is also accuracy_score and confusion_matrix in sklearn.metrics, should be useful
+
+
 try:
     df = pd.read_csv('email_phishing_data.csv')
 except FileNotFoundError:
     print("Cannot find the dataset 'email_phishing_data.csv'")
     sys.exit(1)
-plt.figure(figsize=(10, 8))
-corr = df.corr()
-sns.heatmap(corr, annot=True, cmap='coolwarm', fmt=".2f", square=True)
-plt.tight_layout()
-plt.show()
+# VERY USEFUL HEATMAP STUFF
+
+# plt.figure(figsize=(10, 8))
+# corr = df.corr()
+# sns.heatmap(corr, annot=True, cmap='coolwarm', fmt=".2f", square=True)
+# plt.tight_layout()
+# plt.show()
+
+random_forest_test(df)
+
 # kernel_approx_test(df)
 # SGD_classifier_test(df)
 # isolation_forest_test(df)
