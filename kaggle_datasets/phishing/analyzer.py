@@ -1,5 +1,7 @@
 import pandas as pd
+import matplotlib.pyplot as plt
 import sys
+import seaborn as sns
 
 from sklearn.cluster import KMeans
 from sklearn.ensemble import IsolationForest
@@ -132,6 +134,11 @@ try:
 except FileNotFoundError:
     print("Cannot find the dataset 'email_phishing_data.csv'")
     sys.exit(1)
-kernel_approx_test(df)
+plt.figure(figsize=(10, 8))
+corr = df.corr()
+sns.heatmap(corr, annot=True, cmap='coolwarm', fmt=".2f", square=True)
+plt.tight_layout()
+plt.show()
+# kernel_approx_test(df)
 # SGD_classifier_test(df)
 # isolation_forest_test(df)
