@@ -6,6 +6,7 @@ from sklearn.ensemble import IsolationForest
 from sklearn.linear_model import SGDClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import make_pipeline
+from sklearn.kernel_approximation import RBFSampler
 
 
 def split_df(df, percentage, random_state=42):
@@ -103,9 +104,25 @@ def SGD_classifier_test(df):
     training_df, verification_df = split_df(df, 0.8)
     clf = make_pipeline(
         StandardScaler(),
-        SGDClassifier(max_iter=100000, tol=1e-3, class_weight={0: 1, 1: 67}))
+        SGDClassifier(max_iter=100000, tol=1e-3, class_weight={0: 1, 1: 80}))
     clf.fit(training_df.iloc[:, :-1], training_df['label'])
     verification_df['predict'] = clf.predict(verification_df.iloc[:, :-1])
+
+    run_assessment(verification_df)
+
+
+# This wasn't very useful out of the box but I feel like it has potential
+def kernel_approx_test(df):
+    training_df, verification_df = split_df(df, 0.8)
+
+    rbf_feature = RBFSampler(gamma=1, random_state=1)
+    df_features = rbf_feature.fit_transform(training_df.iloc[:, :-1])
+    clf = SGDClassifier(max_iter=10000, class_weight={
+                        0: 1, 1: 80}, loss='log_loss')
+    clf.fit(df_features, training_df['label'])
+
+    transformed_verif = rbf_feature.transform(verification_df.iloc[:, :-1])
+    verification_df['predict'] = clf.predict(transformed_verif)
 
     run_assessment(verification_df)
 
@@ -115,5 +132,6 @@ try:
 except FileNotFoundError:
     print("Cannot find the dataset 'email_phishing_data.csv'")
     sys.exit(1)
-SGD_classifier_test(df)
+kernel_approx_test(df)
+# SGD_classifier_test(df)
 # isolation_forest_test(df)
