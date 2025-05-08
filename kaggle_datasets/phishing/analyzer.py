@@ -45,8 +45,8 @@ def run_assessment(df):
 
     print("Confusion Matrix (Phishing = 1):")
     print(confusion_table)
-    positive_accuracy = (tp*100 // (fn + tp))
-    negative_accuracy = (tn*100 // (tn + fp))
+    positive_accuracy = ((tp*100) // (fn + tp))
+    negative_accuracy = ((tn*100) // (tn + fp))
 
     print(f"Positive assessment: {positive_accuracy}%\n"
           f"Negative assessment: {negative_accuracy}%")
@@ -144,12 +144,9 @@ def kernel_approx_test(df):
     run_assessment(verification_df)
 
 
-# Random forest is actually really good at detecting
-# phishing emails (with 99% accuracy)
-# It does have only 76% chance of correct answer on non-malicious emails
-# but it's not a bad tradeoff for 99% accuracy on phishing emails
-
-
+# Random forest is actually pretty good at detecting phishing emails
+# It has 76% chance of properly identifying them and a 99% chance of
+# properly identifying a non-malicious email
 def random_forest_test(df):
     training_df, verification_df = split_df(df, 0.8)
     model = RandomForestClassifier(n_estimators=50, random_state=42)
