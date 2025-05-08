@@ -4,7 +4,7 @@ import sys
 import seaborn as sns
 
 from sklearn.cluster import KMeans
-from sklearn.ensemble import IsolationForest, RandomForestClassifier
+from sklearn.ensemble import IsolationForest, RandomForestClassifier, GradientBoostingClassifier
 from sklearn.linear_model import SGDClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import make_pipeline
@@ -159,6 +159,18 @@ def random_forest_test(df):
     # in sklearn.metrics, should be useful
 
 
+# This is pretty bad
+def gradient_boost_test(df):
+    model = GradientBoostingClassifier(
+        n_estimators=100, learning_rate=0.1, max_depth=5)
+    training_df, verification_df = split_df(df, 0.8)
+    model.fit(training_df.iloc[:, :-1], training_df['label'])
+    verification_df['predict'] = model.predict(verification_df.iloc[:, :-1])
+
+    modern_assessment(verification_df)
+    run_assessment(verification_df)
+
+
 try:
     df = pd.read_csv('email_phishing_data.csv')
 except FileNotFoundError:
@@ -175,5 +187,6 @@ except FileNotFoundError:
 random_forest_test(df)
 
 # kernel_approx_test(df)
+# gradient_boost_test(df)
 # SGD_classifier_test(df)
 # isolation_forest_test(df)
