@@ -142,7 +142,8 @@ def random_forest_test(df):
     verification_df['predict'] = model.predict(verification_df.iloc[:, :-1])
 
     run_assessment(verification_df)
-    # There is also accuracy_score and confusion_matrix in sklearn.metrics, should be useful
+    # There is also accuracy_score and confusion_matrix
+    # in sklearn.metrics, should be useful
 
 
 try:
