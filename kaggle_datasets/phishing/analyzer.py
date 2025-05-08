@@ -10,6 +10,8 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import make_pipeline
 from sklearn.kernel_approximation import RBFSampler
 
+from sklearn.metrics import accuracy_score, precision_score, confusion_matrix, classification_report, f1_score, recall_score
+
 
 def split_df(df, percentage, random_state=42):
     training_df = df.sample(
@@ -29,6 +31,8 @@ def run_assessment(df):
         df['label'] == 1)).sum()
     fp = ((df['predict'] == 1) & (
         df['label'] == 0)).sum()
+    training_df, verification_df = split_df(df, 0.8)
+
     tn = ((df['predict'] == 0) & (
         df['label'] == 0)).sum()
     fn = ((df['predict'] == 0) & (
@@ -46,6 +50,17 @@ def run_assessment(df):
 
     print(f"Positive assessment: {positive_accuracy}%\n"
           f"Negative assessment: {negative_accuracy}%")
+
+
+def modern_assessment(df):
+    actual = df['label']
+    pred = df['predict']
+    print("Accuracy:", accuracy_score(actual, pred))
+    print("Precision:", precision_score(actual, pred, average='weighted'))
+    print("Recall:", recall_score(actual, pred, average='weighted'))
+    print("F1 Score:", f1_score(actual, pred, average='weighted'))
+    print("Confusion Matrix:\n", confusion_matrix(actual, pred))
+    print("Classification Report:\n", classification_report(actual, pred))
 
 
 # This is very bad for the problem since the clusters are not split well
@@ -137,10 +152,11 @@ def kernel_approx_test(df):
 
 def random_forest_test(df):
     training_df, verification_df = split_df(df, 0.8)
-    model = RandomForestClassifier(n_estimators=100, random_state=42)
+    model = RandomForestClassifier(n_estimators=50, random_state=42)
     model.fit(training_df.iloc[:, :-1], training_df['label'])
     verification_df['predict'] = model.predict(verification_df.iloc[:, :-1])
 
+    modern_assessment(verification_df)
     run_assessment(verification_df)
     # There is also accuracy_score and confusion_matrix
     # in sklearn.metrics, should be useful
