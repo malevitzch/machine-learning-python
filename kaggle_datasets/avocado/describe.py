@@ -14,6 +14,9 @@ df['Date'] = pd.to_datetime(df['Date'])
 df.set_index('Date', inplace=True)
 
 df.sort_index(inplace=True)
+
+# the problem here is that there are multiple regions in the dataset
+
 # df = df.asfreq('D', method='bfill')
 
 plt.figure(figsize=(10, 8))
