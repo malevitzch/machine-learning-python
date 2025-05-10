@@ -15,6 +15,13 @@ df.set_index('Date', inplace=True)
 
 df.sort_index(inplace=True)
 
+con_df = df[df['type'] == 'conventional']
+org_df = df[df['type'] == 'organic']
+
+
+print(con_df.head())
+print(org_df.head())
+
 # the problem here is that there are multiple regions in the dataset
 
 # df = df.asfreq('D', method='bfill')
