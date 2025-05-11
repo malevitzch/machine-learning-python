@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 import seaborn as sns
 import pandas as pd
 
@@ -25,7 +26,9 @@ def data_graph(df, name, graph_name=None):
     plt.title(graph_name)
     plt.xlabel("Date")
     plt.ylabel(name)
-    plt.xticks(rotation=45)
+    plt.gca().xaxis.set_major_locator(mdates.MonthLocator())
+    plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%b %Y'))
+    plt.xticks(rotation=45, fontsize=8)
     plt.show()
 
 
