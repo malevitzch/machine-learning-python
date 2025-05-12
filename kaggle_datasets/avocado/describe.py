@@ -32,12 +32,25 @@ def data_graph(df, name, graph_name=None):
     plt.show()
 
 
+def graph_average_price_by_region(df):
+    prices = df[['region', 'AveragePrice']]
+    prices = prices.groupby(['region']).mean()
+    plt.bar(df['region'], df['AveragePrice'], color='skyblue')
+    df.T.plot(kind='bar', figsize=(12, 6), legend=False)
+    plt.title('Bar Plot (Columns as Bars)')
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.show()
+    plt.show()
+
+
 def process(df):
     df = df.iloc[:, 1:]
     df = df.asfreq('W', method='bfill')
     print(df.head())
-    data_graph(df, 'AveragePrice',
-               'Average Price of avocado betwene 2015 and 2018')
+    # graph_average_price_by_region(df)
+    # data_graph(df, 'AveragePrice',
+    #          'Average Price of avocado betwene 2015 and 2018')
 
 
 try:
@@ -57,3 +70,4 @@ org_df = df[df['type'] == 'organic']
 con_total_df = con_df[con_df['region'] == 'TotalUS']
 
 process(con_total_df)
+graph_average_price_by_region(con_df)
