@@ -3,4 +3,7 @@ A repository for my experiments with machine learning
 
 # todo
 - Add MSE normalization to the linear regressor
-- Add a way to save the model so I don't have to make a new one every time
+- Find out how to make nice map plots
+- Maybe finish the game sometime
+- Try to predict avocado prices beyond 2018
+- Test an image dataset
