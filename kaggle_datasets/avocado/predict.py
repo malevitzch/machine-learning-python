@@ -18,8 +18,12 @@ def index_by_dates(df):
     df.sort_index(inplace=True)
 
 
+def test_predictions(df):
+    pass
+
 # Read data and split it into conventional and organic avocado
 # cause as far as I'm concerned they are completely different products
+
 
 df = read_df_from_csv('avocado.csv')
 
@@ -29,3 +33,5 @@ con_df = df[df['type'] == 'conventional']
 org_df = df[df['type'] == 'organic']
 
 totalUS_con = con_df[con_df['region'] == 'TotalUS']
+
+test_predictions(totalUS_con)
