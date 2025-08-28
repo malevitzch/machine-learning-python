@@ -13,3 +13,4 @@ dependencies:
   - pytorch
   - pygame
   - seaborn
+  - langchain
