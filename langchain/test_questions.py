@@ -12,7 +12,7 @@ basic_truth = (strid, [
 
 
 def asktf(sentence):
-    return f"Is the sentence \"{sentence}\" true?"
+    return f"Is the statement \"{sentence}\" true?"
 
 
 basic_false = (asktf, [
