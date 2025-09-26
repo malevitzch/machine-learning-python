@@ -3,9 +3,25 @@ from langchain_ollama import OllamaLLM
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.prebuilt import create_react_agent
 from langchain.chat_models.base import BaseChatModel
-from langchain.schema import AIMessage, BaseMessage, ChatResult, ChatGeneration
+from langchain.schema import BaseMessage, ChatResult, ChatGeneration
+from langchain.schema import HumanMessage, AIMessage, SystemMessage
 from pydantic import PrivateAttr
 import uuid
+
+
+def _format_messages(messages: list[BaseMessage]) -> str:
+    lines = []
+    for m in messages:
+        if isinstance(m, HumanMessage):
+            role = "Human"
+        elif isinstance(m, AIMessage):
+            role = "AI"
+        elif isinstance(m, SystemMessage):
+            role = "System"
+        else:
+            role = m.type  # fallback, e.g. "tool"
+        lines.append(f"{role}: {m.content}")
+    return "\n".join(lines)
 
 
 class OllamaWrapper(BaseChatModel):
@@ -16,11 +32,15 @@ class OllamaWrapper(BaseChatModel):
         self._llm = llm
 
     def _generate(self, messages: list[BaseMessage], stop=None, **kwargs):
-        prompt = "\n".join([f"{m.type}: {m.content}" for m in messages])
+        prompt = _format_messages(messages)
         output = self._llm.invoke(prompt, **kwargs)
-        generation = ChatGeneration(message=AIMessage(
-            content=output, id=str(uuid.uuid4())), generation_info={}, text=output)
-        return ChatResult(generations=[[generation]])
+        print(type(output))
+
+        message = AIMessage(
+            content=output)
+
+        generation = ChatGeneration(message=message)
+        return ChatResult(generations=[generation])
 
     def _llm_type(self) -> str:
         return "llama"
