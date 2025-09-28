@@ -8,8 +8,11 @@ from langchain.schema import HumanMessage, AIMessage, SystemMessage
 from pydantic import PrivateAttr
 import uuid
 
+from master_prompts import master_prompt as mp
+
 
 def _format_messages(messages: list[BaseMessage]) -> str:
+    print("Formatting messages")
     lines = []
     for m in messages:
         if isinstance(m, HumanMessage):
@@ -21,7 +24,8 @@ def _format_messages(messages: list[BaseMessage]) -> str:
         else:
             role = m.type  # fallback, e.g. "tool"
         lines.append(f"{role}: {m.content}")
-    return "\n".join(lines)
+        print(m.content)
+    return (mp + "\n").join(lines)
 
 
 class OllamaWrapper(BaseChatModel):
@@ -33,9 +37,8 @@ class OllamaWrapper(BaseChatModel):
 
     def _generate(self, messages: list[BaseMessage], stop=None, **kwargs):
         prompt = _format_messages(messages)
+        print(f"prompt: {prompt}")
         output = self._llm.invoke(prompt, **kwargs)
-        print(type(output))
-
         message = AIMessage(
             content=output)
 
@@ -56,11 +59,9 @@ agent_executor = create_react_agent(model, tools, checkpointer=memory)
 
 config = {"configurable": {"thread_id": "abc123"}}
 
-input_message = {
-    "role": "user",
-    "content": "Hi, I'm Bob and I live in SF.",
-}
+input_message = HumanMessage(content="Hi, I'm Bob and I live in SF.")
+
 for step in agent_executor.stream(
-    {"input": [input_message]}, config, stream_mode="values"
+    {"messages": [input_message]}, config, stream_mode="values"
 ):
     step["messages"][-1].pretty_print()
