@@ -24,7 +24,6 @@ def _format_messages(messages: list[BaseMessage], identity: str) -> str:
         else:
             role = m.type  # fallback, e.g. "tool"
         lines.append(f"{role}: {m.content}")
-        print(m.content)
     return mp + ("\n").join(lines) + "\n"
 
 
