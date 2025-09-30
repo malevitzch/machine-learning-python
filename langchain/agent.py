@@ -6,12 +6,10 @@ from langchain.chat_models.base import BaseChatModel
 from langchain.schema import BaseMessage, ChatResult, ChatGeneration
 from langchain.schema import HumanMessage, AIMessage, SystemMessage
 from pydantic import PrivateAttr
-import uuid
-
-from master_prompts import agent_prompt as mp
+from master_prompts import ai_agent_prompt as mp
 
 
-def _format_messages(messages: list[BaseMessage], identity: str) -> str:
+def _format_messages(messages: list[BaseMessage], identity: str, master_prompt: str) -> str:
     print("Formatting messages")
     lines = []
     for m in messages:
@@ -24,18 +22,20 @@ def _format_messages(messages: list[BaseMessage], identity: str) -> str:
         else:
             role = m.type  # fallback, e.g. "tool"
         lines.append(f"{role}: {m.content}")
-    return mp + ("\n").join(lines) + "\n"
+    return master_prompt + ("\n").join(lines) + "\n"
 
 
 class OllamaWrapper(BaseChatModel):
     _llm: OllamaLLM = PrivateAttr()
+    _master_prompt: str = PrivateAttr()
 
-    def __init__(self, llm: OllamaLLM):
+    def __init__(self, llm: OllamaLLM, master_prompt: str):
         super().__init__()
         self._llm = llm
+        self._master_prompt = master_prompt
 
     def _generate(self, messages: list[BaseMessage], stop=None, **kwargs):
-        prompt = _format_messages(messages, "Knight")
+        prompt = _format_messages(messages, "Knight", self._master_prompt)
         print(f"prompt: {prompt}")
         output = self._llm.invoke(prompt, **kwargs)
         message = AIMessage(
@@ -52,7 +52,7 @@ llm = OllamaLLM(model="llama3:8b-text",
                 base_url="http://127.0.0.1:11434", stops=["END"])
 
 memory = MemorySaver()
-model = OllamaWrapper(llm)
+model = OllamaWrapper(llm, mp)
 tools = []
 agent_executor = create_react_agent(model, tools, checkpointer=memory)
 
