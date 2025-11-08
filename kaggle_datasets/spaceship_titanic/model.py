@@ -1,5 +1,42 @@
 import pandas as pd
 from sklearn.cluster import KMeans
+from sklearn.ensemble import IsolationForest, RandomForestClassifier, GradientBoostingClassifier
+from sklearn.metrics import accuracy_score, precision_score, confusion_matrix, classification_report, f1_score, recall_score
+
+
+def encode(df: pd.DataFrame, string_cols: [str]) -> pd.DataFrame:
+    for col in string_cols:
+        df[col] = df[col].astype('category').cat.codes
+    return df
+
+
+def extract_interesting(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    We currently ignore the following:
+    - Name (potentially the number of travels might matter)
+    - Index inside the group
+    """
+
+    # df = df.drop(df.columns[-2], axis=1).copy()
+    df = df.copy()
+
+    # Convert truth values to regular 0/1 integers
+    df['Transported'] = df['Transported'].astype(int)
+    df['CryoSleep'] = df['CryoSleep'].astype(int)
+
+    # Extract group and group size from each passenger
+    df['Group'] = df.apply(lambda row: row['PassengerId'][:4], axis=1)
+    df['GroupSize'] = df.groupby('Group')['Group'].transform('count')
+
+    # Extract the three characteristics from Cabin
+    df['Deck'] = df.apply(lambda row: row['Cabin'][0], axis=1)
+    df['Side'] = df.apply(lambda row: row['Cabin'][4], axis=1)
+    df['Number'] = df.apply(lambda row: row['Cabin'][2], axis=1)
+
+    string_cols = ['HomePlanet', 'Deck', 'Side', 'Destination', 'Name']
+    encode(df, string_cols)
+
+    return df.drop(columns=['Cabin'])
 
 
 def split_df(df, percentage, random_state=42):
@@ -9,8 +46,17 @@ def split_df(df, percentage, random_state=42):
     return traindf, verification_df
 
 
-# Clustering doesn't work too well with strings, at least
-# the standard algorithms don't
+def assessment(df):
+    actual = df['Transported']
+    pred = df['Predict']
+    print("Accuracy:", accuracy_score(actual, pred))
+    print("Precision:", precision_score(actual, pred, average='weighted'))
+    print("Recall:", recall_score(actual, pred, average='weighted'))
+    print("F1 Score:", f1_score(actual, pred, average='weighted'))
+    print("Confusion Matrix:\n", confusion_matrix(actual, pred))
+    print("Classification Report:\n", classification_report(actual, pred))
+
+# This requires some data preparation before trying
 
 
 def cluster_test(df):
@@ -30,5 +76,20 @@ def cluster_test(df):
     print(f"Training dataset: {correct}/{all}: {percent}%")
 
 
-tdf = pd.read_csv('train.csv').dropna()
-cluster_test(tdf)
+def random_forest_test(df: pd.DataFrame):
+    training_df, verification_df = split_df(df, 0.4)
+    model = RandomForestClassifier(n_estimators=50, random_state=42)
+    feature_cols = [col for col in df.columns if col != 'Transported']
+    model.fit(training_df[feature_cols], training_df['Transported'])
+    verification_df['Predict'] = model.predict(verification_df[feature_cols])
+    assessment(verification_df)
+
+
+tdf = pd.read_csv('train.csv').dropna().reset_index(drop=True)
+df = extract_interesting(tdf)
+
+random_forest_test(df)
+random_forest_test(
+    encode(tdf, ['PassengerId', 'HomePlanet', 'Cabin', 'Name', 'Destination']))
+
+# cluster_test(tdf)
