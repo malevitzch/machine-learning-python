@@ -17,11 +17,11 @@ def extract_interesting(df: pd.DataFrame) -> pd.DataFrame:
     - Index inside the group
     """
 
-    # df = df.drop(df.columns[-2], axis=1).copy()
     df = df.copy()
 
     # Convert truth values to regular 0/1 integers
-    df['Transported'] = df['Transported'].astype(int)
+    if 'Transported' in df.columns:
+        df['Transported'] = df['Transported'].astype(int)
     df['CryoSleep'] = df['CryoSleep'].astype(int)
 
     # Extract group and group size from each passenger
@@ -29,12 +29,12 @@ def extract_interesting(df: pd.DataFrame) -> pd.DataFrame:
     df['GroupSize'] = df.groupby('Group')['Group'].transform('count')
 
     # Extract the three characteristics from Cabin
-    df['Deck'] = df.apply(lambda row: row['Cabin'][0], axis=1)
-    df['Side'] = df.apply(lambda row: row['Cabin'][4], axis=1)
-    df['Number'] = df.apply(lambda row: row['Cabin'][2], axis=1)
-
-    string_cols = ['HomePlanet', 'Deck', 'Side', 'Destination', 'Name']
-    encode(df, string_cols)
+    df['Deck'] = df.apply(lambda row: 'Unknown'
+                          if row['Cabin'] == 'Unknown' else row['Cabin'][0], axis=1)
+    df['Side'] = df.apply(lambda row: 'Unknown'
+                          if row['Cabin'] == 'Unknown' else row['Cabin'][4], axis=1)
+    df['Number'] = df.apply(lambda row: '-1'
+                            if row['Cabin'] == 'Unknown' else row['Cabin'][2], axis=1)
 
     return df.drop(columns=['Cabin'])
 
@@ -59,8 +59,11 @@ def assessment(df):
 # This requires some data preparation before trying
 
 
-def cluster_test(df):
-    traindf, verdf = split_df(df, 0.4)
+def cluster_test(df, split=True):
+    if split:
+        traindf, verdf = split_df(df, 0.4)
+    else:
+        traindf = df
     kmeans = KMeans(n_clusters=2, random_state=42, init='k-means++')
     kmeans.fit(traindf.drop(
         columns=['Transported', 'HomePlanet', 'Cabin', 'Destination', 'Name']))
@@ -76,20 +79,53 @@ def cluster_test(df):
     print(f"Training dataset: {correct}/{all}: {percent}%")
 
 
-def random_forest_test(df: pd.DataFrame):
-    training_df, verification_df = split_df(df, 0.4)
-    model = RandomForestClassifier(n_estimators=50, random_state=42)
+def random_forest_test(df: pd.DataFrame, split: bool = True) -> RandomForestClassifier:
+    if split:
+        training_df, verification_df = split_df(df, 0.4)
+    else:
+        training_df = df
+    model = RandomForestClassifier(
+        n_estimators=50, random_state=42, n_jobs=8)
     feature_cols = [col for col in df.columns if col != 'Transported']
     model.fit(training_df[feature_cols], training_df['Transported'])
-    verification_df['Predict'] = model.predict(verification_df[feature_cols])
-    assessment(verification_df)
+    if split:
+        verification_df['Predict'] = model.predict(
+            verification_df[feature_cols])
+        assessment(verification_df)
+    return model
 
 
-tdf = pd.read_csv('train.csv').dropna().reset_index(drop=True)
-df = extract_interesting(tdf)
+def fill_na(df: pd.DataFrame) -> pd.DataFrame:
+    df['HomePlanet'] = df['HomePlanet'].fillna('Unknown')
+    df['CryoSleep'] = df['CryoSleep'].fillna(False)
+    df['Cabin'] = df['Cabin'].fillna('Unknown')
+    df['Destination'] = df['Destination'].fillna('Unknown')
+    df['Age'] = df['Age'].fillna(0.0)
+    df['VIP'] = df['VIP'].fillna(False)
+    df['RoomService'] = df['RoomService'].fillna(0.0)
+    df['FoodCourt'] = df['FoodCourt'].fillna(0.0)
+    df['ShoppingMall'] = df['ShoppingMall'].fillna(0.0)
+    df['Spa'] = df['Spa'].fillna(0.0)
+    df['VRDeck'] = df['VRDeck'].fillna(0.0)
+    df['Name'] = df['Name'].fillna('Unknown')
+    return df
 
-random_forest_test(df)
-random_forest_test(
-    encode(tdf, ['PassengerId', 'HomePlanet', 'Cabin', 'Name', 'Destination']))
 
-# cluster_test(tdf)
+df = extract_interesting(fill_na(pd.read_csv('train.csv')))
+taskdf = extract_interesting(fill_na(pd.read_csv('test.csv')))
+
+combined = pd.concat([df, taskdf], keys=['train', 'test'])
+
+string_cols = ['HomePlanet', 'Deck', 'Side', 'Destination', 'Name']
+encode(combined, string_cols)
+df = combined.xs('train')
+taskdf = combined.xs('test').drop(columns=['Transported'])
+
+model = random_forest_test(df, split=False)
+taskdf['Transported'] = model.predict(taskdf[taskdf.columns])
+result = taskdf[['PassengerId', 'Transported']]
+result['Transported'] = result['Transported'].astype(bool)
+print(result)
+result.to_csv('result.csv', index=False)
+# random_forest_test(
+#    encode(tdf, ['PassengerId', 'HomePlanet', 'Cabin', 'Name', 'Destination']))
