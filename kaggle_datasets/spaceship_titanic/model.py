@@ -2,6 +2,10 @@ import pandas as pd
 from sklearn.cluster import KMeans
 from sklearn.ensemble import IsolationForest, RandomForestClassifier, GradientBoostingClassifier
 from sklearn.metrics import accuracy_score, precision_score, confusion_matrix, classification_report, f1_score, recall_score
+from xgboost import XGBClassifier
+from sklearn.model_selection import StratifiedKFold
+
+import numpy as np
 
 
 def encode(df: pd.DataFrame, string_cols: [str]) -> pd.DataFrame:
@@ -33,13 +37,16 @@ def extract_interesting(df: pd.DataFrame) -> pd.DataFrame:
                           if row['Cabin'] == 'Unknown' else row['Cabin'][0], axis=1)
     df['Side'] = df.apply(lambda row: 'Unknown'
                           if row['Cabin'] == 'Unknown' else row['Cabin'][4], axis=1)
-    df['Number'] = df.apply(lambda row: '-1'
-                            if row['Cabin'] == 'Unknown' else row['Cabin'][2], axis=1)
+    df['Number'] = df.apply(lambda row: -1
+                            if row['Cabin'] == 'Unknown' else int(row['Cabin'][2]), axis=1)
 
-    return df.drop(columns=['Cabin'])
+    num = ['RoomService', 'FoodCourt', 'ShoppingMall', 'Spa', 'VRDeck']
+    df['Total'] = df[num].sum(axis=1)
+
+    return df
 
 
-def split_df(df, percentage, random_state=42):
+def split_df(df, percentage, random_state=47):
     traindf = df.sample(
         frac=percentage, random_state=random_state).reset_index(drop=True)
     verification_df = df.drop(traindf.index).reset_index(drop=True)
@@ -95,18 +102,54 @@ def random_forest_test(df: pd.DataFrame, split: bool = True) -> RandomForestClas
     return model
 
 
+def xgboost_test(df: pd.DataFrame) -> XGBClassifier:
+    training_df, verification_df = split_df(df, 0.6)
+    cat_cols = ['Deck', 'HomePlanet', 'Destination', 'Side', 'Group']
+    for col in cat_cols:
+        df[col] = df[col].astype('category')
+    model = XGBClassifier(n_estimators=3000,
+                          max_depth=11,
+                          min_child_weight=0,
+                          learning_rate=0.01,
+                          objective='binary:logistic',
+                          early_stopping_rounds=50,
+                          gamma=0,
+                          enable_categorical=True)
+    feature_cols = [col for col in df.columns if col not in [
+        'Transported', 'PassengerId']]
+    model.fit(training_df[feature_cols],
+              training_df['Transported'],
+              eval_set=[(verification_df[feature_cols], verification_df['Transported'])])
+    verification_df['Predict'] = model.predict(
+        verification_df[feature_cols])
+    assessment(verification_df)
+    return model
+
+
 def fill_na(df: pd.DataFrame) -> pd.DataFrame:
-    df['HomePlanet'] = df['HomePlanet'].fillna('Unknown')
+
+    # df['HomePlanet'] = df['HomePlanet'].fillna('Unknown')
+
     df['CryoSleep'] = df['CryoSleep'].fillna(False)
+
     df['Cabin'] = df['Cabin'].fillna('Unknown')
-    df['Destination'] = df['Destination'].fillna('Unknown')
-    df['Age'] = df['Age'].fillna(0.0)
+
+    # df['Destination'] = df['Destination'].fillna('Unknown')
+
+    df['Age'] = df['Age'].fillna(df['Age'].median())
+
     df['VIP'] = df['VIP'].fillna(False)
-    df['RoomService'] = df['RoomService'].fillna(0.0)
-    df['FoodCourt'] = df['FoodCourt'].fillna(0.0)
-    df['ShoppingMall'] = df['ShoppingMall'].fillna(0.0)
-    df['Spa'] = df['Spa'].fillna(0.0)
-    df['VRDeck'] = df['VRDeck'].fillna(0.0)
+
+    df['RoomService'] = df['RoomService'].fillna(df['RoomService'].median())
+
+    df['FoodCourt'] = df['FoodCourt'].fillna(df['FoodCourt'].median())
+
+    df['ShoppingMall'] = df['ShoppingMall'].fillna(df['ShoppingMall'].median())
+
+    df['Spa'] = df['Spa'].fillna(df['Spa'].median())
+
+    df['VRDeck'] = df['VRDeck'].fillna(df['VRDeck'].median())
+
     df['Name'] = df['Name'].fillna('Unknown')
     return df
 
@@ -116,16 +159,24 @@ taskdf = extract_interesting(fill_na(pd.read_csv('test.csv')))
 
 combined = pd.concat([df, taskdf], keys=['train', 'test'])
 
-string_cols = ['HomePlanet', 'Deck', 'Side', 'Destination', 'Name']
+string_cols = ['HomePlanet', 'Deck', 'Side',
+               'Destination', 'Name', 'Group', 'Cabin']
 encode(combined, string_cols)
 df = combined.xs('train')
 taskdf = combined.xs('test').drop(columns=['Transported'])
+cat_cols = ['Deck', 'HomePlanet', 'Destination', 'Side', 'Group']
+for col in cat_cols:
+    taskdf[col] = taskdf[col].astype('category')
 
-model = random_forest_test(df, split=False)
-taskdf['Transported'] = model.predict(taskdf[taskdf.columns])
+model = xgboost_test(df)
+feature_cols = [col for col in df.columns if col not in [
+    'Transported', 'PassengerId']]
+
+taskdf['Transported'] = model.predict(
+    taskdf[feature_cols])
 result = taskdf[['PassengerId', 'Transported']]
 result['Transported'] = result['Transported'].astype(bool)
-print(result)
-result.to_csv('result.csv', index=False)
+# print(result)
+result.to_csv('result_xgb.csv', index=False)
 # random_forest_test(
 #    encode(tdf, ['PassengerId', 'HomePlanet', 'Cabin', 'Name', 'Destination']))
