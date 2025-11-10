@@ -92,23 +92,30 @@ def random_forest_test(df: pd.DataFrame, split: bool = True) -> RandomForestClas
     if split:
         verification_df['Predict'] = model.predict(
             verification_df[feature_cols])
-        assessment(verification_df)
+        # assessment(verification_df)
     return model
 
 
 def xgboost_test(df: pd.DataFrame) -> XGBClassifier:
-    training_df, verification_df, test_df = split_into_three(df, 0.28, 0.2)
+    training_df, verification_df, test_df = split_into_three(df, 0.28, 0.0)
     cat_cols = ['Deck', 'HomePlanet', 'Destination', 'Side', 'Group']
     for col in cat_cols:
         df[col] = df[col].astype('category')
-    model = XGBClassifier(n_estimators=500,
-                          max_depth=7,
-                          min_child_weight=0,
-                          learning_rate=0.01,
-                          objective='binary:logistic',
-                          early_stopping_rounds=50,
-                          gamma=1,
-                          enable_categorical=True)
+    params = {
+        'n_estimators': 10000,
+        'max_depth': 9,
+        'subsample': 0.8,
+        'colsample_bytree': 0.8,
+        'colsample_bylevel': 0.8,
+        'learning_rate': 0.005,
+        'objective': 'binary:logistic',
+        'gamma': 2.0,
+        'reg_lambda': 2.0,
+        'reg_alpha': 1.0,
+        'enable_categorical': True,
+        'early_stopping_rounds': 50
+    }
+    model = XGBClassifier(**params)
     feature_cols = [col for col in df.columns if col not in [
         'Transported', 'PassengerId']]
     model.fit(training_df[feature_cols],
@@ -116,7 +123,7 @@ def xgboost_test(df: pd.DataFrame) -> XGBClassifier:
               eval_set=[(verification_df[feature_cols], verification_df['Transported'])])
     test_df['Predict'] = model.predict(
         test_df[feature_cols])
-    assessment(test_df)
+    # assessment(test_df)
     return model
 
 
