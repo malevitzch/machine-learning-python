@@ -7,6 +7,8 @@ from sklearn.model_selection import StratifiedKFold
 
 import numpy as np
 
+import random
+
 
 def encode(df: pd.DataFrame, string_cols: [str]) -> pd.DataFrame:
     for col in string_cols:
@@ -26,7 +28,7 @@ def extract_interesting(df: pd.DataFrame) -> pd.DataFrame:
     # Convert truth values to regular 0/1 integers
     if 'Transported' in df.columns:
         df['Transported'] = df['Transported'].astype(int)
-    df['CryoSleep'] = df['CryoSleep'].astype(int)
+    df['CryoSleep'] = df['CryoSleep'].astype(bool)
 
     # Extract group and group size from each passenger
     df['Group'] = df.apply(lambda row: row['PassengerId'][:4], axis=1)
@@ -53,6 +55,20 @@ def split_df(df, percentage, random_state=47):
     return traindf, verification_df
 
 
+def split_into_three(df, percentage_validation, percentage_test):
+    random_state = random.randint(0, 2**32 - 1)
+    testdf = df.sample(frac=percentage_test, random_state=random_state)
+    remaining = df.drop(testdf.index)
+
+    val_frac = percentage_validation / (1 - percentage_test)
+    valdf = remaining.sample(frac=val_frac, random_state=random_state)
+    traindf = remaining.drop(valdf.index)
+
+    return (traindf.reset_index(drop=True),
+            valdf.reset_index(drop=True),
+            testdf.reset_index(drop=True))
+
+
 def assessment(df):
     actual = df['Transported']
     pred = df['Predict']
@@ -62,28 +78,6 @@ def assessment(df):
     print("F1 Score:", f1_score(actual, pred, average='weighted'))
     print("Confusion Matrix:\n", confusion_matrix(actual, pred))
     print("Classification Report:\n", classification_report(actual, pred))
-
-# This requires some data preparation before trying
-
-
-def cluster_test(df, split=True):
-    if split:
-        traindf, verdf = split_df(df, 0.4)
-    else:
-        traindf = df
-    kmeans = KMeans(n_clusters=2, random_state=42, init='k-means++')
-    kmeans.fit(traindf.drop(
-        columns=['Transported', 'HomePlanet', 'Cabin', 'Destination', 'Name']))
-    traindf['predict'] = kmeans.labels_
-    safe_cluster = traindf['predict'].mode()[0]
-    if safe_cluster != 0:
-        traindf['predict'] = traindf['predict'].map({0: 1, 1: 0})
-
-    correct = (traindf['Transported'] == traindf['predict']).sum()
-    all = len(traindf)
-
-    percent = int((correct / all) * 100)
-    print(f"Training dataset: {correct}/{all}: {percent}%")
 
 
 def random_forest_test(df: pd.DataFrame, split: bool = True) -> RandomForestClassifier:
@@ -103,26 +97,26 @@ def random_forest_test(df: pd.DataFrame, split: bool = True) -> RandomForestClas
 
 
 def xgboost_test(df: pd.DataFrame) -> XGBClassifier:
-    training_df, verification_df = split_df(df, 0.6)
+    training_df, verification_df, test_df = split_into_three(df, 0.28, 0.2)
     cat_cols = ['Deck', 'HomePlanet', 'Destination', 'Side', 'Group']
     for col in cat_cols:
         df[col] = df[col].astype('category')
-    model = XGBClassifier(n_estimators=3000,
-                          max_depth=11,
+    model = XGBClassifier(n_estimators=500,
+                          max_depth=7,
                           min_child_weight=0,
                           learning_rate=0.01,
                           objective='binary:logistic',
                           early_stopping_rounds=50,
-                          gamma=0,
+                          gamma=1,
                           enable_categorical=True)
     feature_cols = [col for col in df.columns if col not in [
         'Transported', 'PassengerId']]
     model.fit(training_df[feature_cols],
               training_df['Transported'],
               eval_set=[(verification_df[feature_cols], verification_df['Transported'])])
-    verification_df['Predict'] = model.predict(
-        verification_df[feature_cols])
-    assessment(verification_df)
+    test_df['Predict'] = model.predict(
+        test_df[feature_cols])
+    assessment(test_df)
     return model
 
 
