@@ -48,10 +48,12 @@ def extract_interesting(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def split_df(df, percentage, random_state=47):
+def split_df(df, percentage):
+    random_state = random.randint(0, 2**32 - 1)
     traindf = df.sample(
-        frac=percentage, random_state=random_state).reset_index(drop=True)
+        frac=percentage, random_state=random_state)
     verification_df = df.drop(traindf.index).reset_index(drop=True)
+    traindf = traindf.reset_index(drop=True)
     return traindf, verification_df
 
 
@@ -96,8 +98,12 @@ def random_forest_test(df: pd.DataFrame, split: bool = True) -> RandomForestClas
     return model
 
 
-def xgboost_test(df: pd.DataFrame) -> XGBClassifier:
-    training_df, verification_df, test_df = split_into_three(df, 0.28, 0.0)
+def xgboost_test(df: pd.DataFrame, test=0.0, eval=True) -> XGBClassifier:
+    if eval:
+        training_df, verification_df, test_df = split_into_three(
+            df, 0.28, test)
+    else:
+        test_df, training_df = split_df(df, test)
     cat_cols = ['Deck', 'HomePlanet', 'Destination', 'Side', 'Group']
     for col in cat_cols:
         df[col] = df[col].astype('category')
@@ -107,7 +113,7 @@ def xgboost_test(df: pd.DataFrame) -> XGBClassifier:
         'subsample': 0.8,
         'colsample_bytree': 0.8,
         'colsample_bylevel': 0.8,
-        'learning_rate': 0.005,
+        'learning_rate': 0.01,
         'objective': 'binary:logistic',
         'gamma': 2.0,
         'reg_lambda': 2.0,
@@ -115,15 +121,25 @@ def xgboost_test(df: pd.DataFrame) -> XGBClassifier:
         'enable_categorical': True,
         'early_stopping_rounds': 50
     }
+    if not eval:
+        params.pop('early_stopping_rounds')
+        params['n_estimators'] = 1400
+
     model = XGBClassifier(**params)
     feature_cols = [col for col in df.columns if col not in [
         'Transported', 'PassengerId']]
-    model.fit(training_df[feature_cols],
-              training_df['Transported'],
-              eval_set=[(verification_df[feature_cols], verification_df['Transported'])])
-    test_df['Predict'] = model.predict(
-        test_df[feature_cols])
-    # assessment(test_df)
+    if eval:
+        model.fit(training_df[feature_cols],
+                  training_df['Transported'],
+                  eval_set=[(verification_df[feature_cols], verification_df['Transported'])])
+    else:
+        model.fit(training_df[feature_cols],
+                  training_df['Transported'])
+
+    if test != 0:
+        test_df['Predict'] = model.predict(
+            test_df[feature_cols])
+        assessment(test_df)
     return model
 
 
@@ -169,7 +185,7 @@ cat_cols = ['Deck', 'HomePlanet', 'Destination', 'Side', 'Group']
 for col in cat_cols:
     taskdf[col] = taskdf[col].astype('category')
 
-model = xgboost_test(df)
+model = xgboost_test(df, 0.2, False)
 feature_cols = [col for col in df.columns if col not in [
     'Transported', 'PassengerId']]
 
