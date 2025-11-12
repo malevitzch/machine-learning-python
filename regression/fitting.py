@@ -5,12 +5,13 @@ import matplotlib.pyplot as plt
 
 def linear_function(a, b):
     def f(x):
-        return a*x + b
+        return a * x + b
+
     return f
 
 
 def deviated_points_uniform(f, X, percent_error):
-    deviation = (percent_error/100) * np.random.uniform(-1, 1, size=X.shape)
+    deviation = (percent_error / 100) * np.random.uniform(-1, 1, size=X.shape)
     Y = np.vectorize(f)(X) * (1 + deviation)
     return Y
 
@@ -33,15 +34,13 @@ def fit_line(X, Y, iters=1000, lr=0.01):
         loss.backward()
         optimizer.step()
 
-    return (a.detach().numpy() * y_scale_factor,
-            b.detach().numpy() * y_scale_factor)
+    return (a.detach().numpy() * y_scale_factor, b.detach().numpy() * y_scale_factor)
 
 
 def plot(X, Y, a, b):
     plt.figure(figsize=(8, 5))
-    plt.scatter(X, Y, label='Data', color='red')
-    plt.plot(X, np.vectorize(linear_function(a, b))(X),
-             label='Line fit', color='blue')
+    plt.scatter(X, Y, label="Data", color="red")
+    plt.plot(X, np.vectorize(linear_function(a, b))(X), label="Line fit", color="blue")
     plt.legend()
     plt.show()
 
