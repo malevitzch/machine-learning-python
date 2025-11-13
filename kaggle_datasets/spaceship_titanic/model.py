@@ -34,7 +34,7 @@ def one_hot(df: pd.DataFrame, col: str) -> pd.DataFrame:
         new_col = col + "_" + str(key)
         df[new_col] = df[col].apply(lambda s: s == key)
         print(new_col)
-    print(f'Created {keys.size} features from column "{col}"')
+    print(f'Created {len(keys)} features from column "{col}"')
     return df
 
 
