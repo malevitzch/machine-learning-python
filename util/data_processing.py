@@ -4,6 +4,15 @@ import os
 import sys
 import random
 
+from sklearn.metrics import (
+    accuracy_score,
+    precision_score,
+    confusion_matrix,
+    classification_report,
+    f1_score,
+    recall_score,
+)
+
 
 def one_hot(df: pd.DataFrame, col: str, verbose=False, infix="_is_"):
     """
@@ -57,3 +66,19 @@ def split(
         df_percentage -= percentage
 
     return result
+
+
+def assessment(df, actual, pred, verbose=True):
+    if actual not in df.columns:
+        raise ValueError(f'No column "{actual}" in the dataframe')
+    if pred not in df.columns:
+        raise ValueError(f'No column "{pred}" in the dataframe')
+    actual = df[actual]
+    pred = df[pred]
+    print("Accuracy:", accuracy_score(actual, pred))
+    if verbose:
+        print("Confusion Matrix:\n", confusion_matrix(actual, pred))
+        print("Precision:", precision_score(actual, pred, average="weighted"))
+        print("Recall:", recall_score(actual, pred, average="weighted"))
+        print("F1 Score:", f1_score(actual, pred, average="weighted"))
+        print("Classification Report:\n", classification_report(actual, pred))
